@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculateur de Poids de Revue</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+      padding: 20px;
+      margin: 0;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+    td.poids {
+      min-width: 100px;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 8px 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .totaux {
+      font-size: 1.1em;
+      margin-top: 10px;
+      color: #333;
+    }
+    @media (max-width: 700px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      thead tr {
+        display: none;
+      }
+      tr {
+        margin-bottom: 15px;
+        background: #fff;
+        border-radius: 6px;
+        padding: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+      td {
+        border: none;
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 10px;
+      }
+      td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        flex-basis: 50%;
+      }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(10px); }
+    }
+    tr.new-row {
+      animation: fadeIn 0.4s ease;
+    }
+    tr.remove-row {
+      animation: fadeOut 0.3s ease forwards;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Calculateur de Poids de Revue</h1>
+    <table id="table">
+      <thead>
+        <tr>
+          <th>Largeur (mm)</th>
+          <th>Hauteur (mm)</th>
+          <th>Pages</th>
+          <th>Grammage (g/m²)</th>
+          <th>Épaisseur (mm)</th>
+          <th>Poids (g)</th>
+          <th>Supprimer</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+    <button onclick="ajouterLigne()">Ajouter une ligne</button>
+    <div class="totaux" id="poids-total">Poids total : 0 g</div>
+    <div class="totaux" id="poids-marge">Poids avec 1% de sécurité : 0 g</div>
+  </div>
+
+  <script>
+    function calculerPoidsLigne(row) {
+      const largeur = parseFloat(row.querySelector('.largeur').value) || 0;
+      const hauteur = parseFloat(row.querySelector('.hauteur').value) || 0;
+      const pages = parseInt(row.querySelector('.pages').value) || 0;
+      const grammage = parseFloat(row.querySelector('.grammage').value) || 0;
+
+      const epaisseur = 0.9 * (pages / 2) * (grammage / 1000);
+      const poids = (largeur * hauteur * (pages / 2) * grammage) / 1_000_000;
+
+      row.querySelector('.epaisseur').textContent = epaisseur.toFixed(2) + ' mm';
+      row.querySelector('.poids').textContent = poids.toFixed(2) + ' g';
+
+      calculerPoidsTotal();
+    }
+
+    function calculerPoidsTotal() {
+      const poidsCells = document.querySelectorAll('.poids');
+      let total = 0;
+      poidsCells.forEach(cell => {
+        const valeur = parseFloat(cell.textContent.replace(' g', '')) || 0;
+        total += valeur;
+      });
+      document.getElementById('poids-total').textContent = 'Poids total : ' + Math.round(total) + ' g';
+      document.getElementById('poids-marge').textContent = 'Poids avec 1% de sécurité : ' + Math.round(total * 1.01) + ' g';
+    }
+
+    function ajouterLigne() {
+      const tbody = document.getElementById('table-body');
+      const tr = document.createElement('tr');
+      tr.classList.add('new-row');
+      tr.innerHTML = `
+        <td data-label="Largeur"><input type="number" class="largeur" oninput="calculerPoidsLigne(this.parentElement.parentElement)"></td>
+        <td data-label="Hauteur"><input type="number" class="hauteur" oninput="calculerPoidsLigne(this.parentElement.parentElement)"></td>
+        <td data-label="Pages"><input type="number" class="pages" oninput="calculerPoidsLigne(this.parentElement.parentElement)"></td>
+        <td data-label="Grammage"><input type="number" class="grammage" oninput="calculerPoidsLigne(this.parentElement.parentElement)"></td>
+        <td class="epaisseur" data-label="Épaisseur">0.00 mm</td>
+        <td class="poids" data-label="Poids">0.00 g</td>
+        <td data-label="Supprimer"><button onclick="supprimerLigne(this)">X</button></td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    function supprimerLigne(button) {
+      const row = button.parentElement.parentElement;
+      row.classList.add('remove-row');
+      setTimeout(() => {
+        row.remove();
+        calculerPoidsTotal();
+      }, 300);
+    }
+
+    ajouterLigne();
+  </script>
+</body>
+</html>
