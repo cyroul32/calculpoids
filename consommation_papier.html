@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculateur de Consommation Papier</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+      padding: 20px;
+      margin: 0;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+    td.consommation {
+      min-width: 100px;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 8px 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .totaux {
+      font-size: 1.1em;
+      margin-top: 10px;
+      color: #333;
+    }
+    @media (max-width: 700px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      thead tr {
+        display: none;
+      }
+      tr {
+        margin-bottom: 15px;
+        background: #fff;
+        border-radius: 6px;
+        padding: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+      td {
+        border: none;
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 10px;
+      }
+      td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        flex-basis: 50%;
+      }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(10px); }
+    }
+    tr.new-row {
+      animation: fadeIn 0.4s ease;
+    }
+    tr.remove-row {
+      animation: fadeOut 0.3s ease forwards;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Calculateur de Consommation Papier</h1>
+    <table id="table">
+      <thead>
+        <tr>
+          <th>Coupe machine (cm)</th>
+          <th>Laize papier (cm)</th>
+          <th>Grammage (g/m²)</th>
+          <th>Calage (kg)</th>
+          <th>Roulage (kg)</th>
+          <th>Quantité</th>
+          <th>Consommation (kg)</th>
+          <th>Supprimer</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+    <button onclick="ajouterLigne()">Ajouter une ligne</button>
+    <div class="totaux" id="consommation-total">Consommation totale : 0.00 kg</div>
+  </div>
+
+  <script>
+    function calculerConsommationLigne(row) {
+      const coupe = parseFloat(row.querySelector('.coupe').value) || 0;
+      const laize = parseFloat(row.querySelector('.laize').value) || 0;
+      const grammage = parseFloat(row.querySelector('.grammage').value) || 0;
+      const calage = parseFloat(row.querySelector('.calage').value) || 0;
+      const roulage = parseFloat(row.querySelector('.roulage').value) || 0;
+      const quantite = parseInt(row.querySelector('.quantite').value) || 0;
+
+      const area = (coupe / 100) * (laize / 100); // m² par exemplaire
+      const poidsKg = (area * grammage * quantite) / 1000; // kg pour la quantité
+      const totalKg = poidsKg + calage + roulage;
+
+      row.querySelector('.consommation').textContent = totalKg.toFixed(2) + ' kg';
+
+      calculerConsommationTotale();
+    }
+
+    function calculerConsommationTotale() {
+      const consoCells = document.querySelectorAll('.consommation');
+      let total = 0;
+      consoCells.forEach(cell => {
+        const valeur = parseFloat(cell.textContent.replace(' kg', '')) || 0;
+        total += valeur;
+      });
+      document.getElementById('consommation-total').textContent = 'Consommation totale : ' + total.toFixed(2) + ' kg';
+    }
+
+    function ajouterLigne() {
+      const tbody = document.getElementById('table-body');
+      const tr = document.createElement('tr');
+      tr.classList.add('new-row');
+      tr.innerHTML = `
+        <td data-label="Coupe machine"><input type="number" class="coupe" oninput="calculerConsommationLigne(this.parentElement.parentElement)"></td>
+        <td data-label="Laize papier"><input type="number" class="laize" oninput="calculerConsommationLigne(this.parentElement.parentElement)"></td>
+        <td data-label="Grammage"><input type="number" class="grammage" oninput="calculerConsommationLigne(this.parentElement.parentElement)"></td>
+        <td data-label="Calage"><input type="number" class="calage" oninput="calculerConsommationLigne(this.parentElement.parentElement)"></td>
+        <td data-label="Roulage"><input type="number" class="roulage" oninput="calculerConsommationLigne(this.parentElement.parentElement)"></td>
+        <td data-label="Quantité"><input type="number" class="quantite" oninput="calculerConsommationLigne(this.parentElement.parentElement)"></td>
+        <td class="consommation" data-label="Consommation">0.00 kg</td>
+        <td data-label="Supprimer"><button onclick="supprimerLigne(this)">X</button></td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    function supprimerLigne(button) {
+      const row = button.parentElement.parentElement;
+      row.classList.add('remove-row');
+      setTimeout(() => {
+        row.remove();
+        calculerConsommationTotale();
+      }, 300);
+    }
+
+    ajouterLigne();
+  </script>
+</body>
+</html>
